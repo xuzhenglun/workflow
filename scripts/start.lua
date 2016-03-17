@@ -1,9 +1,10 @@
 start = {
     name = "start",
-    typ = "POST,GET",
-    helper = "this is start",
+    typ = "POST",
+    helper = "name address",
     handler = function(n)
         log("this is starter")
+        AddRow(n)
         return "start"
     end
 }

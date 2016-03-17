@@ -19,6 +19,8 @@ type VMs struct {
 	Activities map[string]string
 	Mappler    map[string]string
 	Api        map[string]func(*lua.LState) int
+	Db         DataBase
+	Re         *regexp.Regexp
 }
 
 type VM struct {
@@ -42,11 +44,13 @@ func InitCore() *VMs {
 		log.Println("Script \"" + string(name) + "\" loaded")
 	}
 	this.InitMap()
+	this.Re, _ = regexp.Compile(`\w+`)
 	return &this
 }
 
 func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 	l := lua.NewState()
+	defer l.Close()
 
 	if this.Api != nil {
 		for key, value := range this.Api {
@@ -61,11 +65,13 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 		log.Println(`Warning: Failed to Find "` + r.Name + `.lua", I'will search it form globle, It's may cause performance issue.`)
 		l.DoString(this.Scripts)
 	}
+
 	activity := FindActivityByName(l, r.Name)
 	if activity == nil {
 		return HandleErr{When: time.Now(), What: "Can't find activity"}
 	}
 
+	this.InitDatabase(l, activity)
 	ret, err := activity.Handle(r.Args)
 	if err != nil {
 		log.Println(err)
@@ -102,4 +108,17 @@ func (this *VMs) RegeditApi(list map[string]func(*lua.LState) int) {
 	if list != nil {
 		this.Api = list
 	}
+}
+
+func (this *VMs) SetDataBase(database DataBase) {
+	this.Db = database
+}
+
+func (this *VMs) RawLuaHandler(str string) string {
+	l := lua.NewState()
+	if err := l.DoString(str); err != nil {
+		return err.Error()
+	}
+	return "Done"
+
 }

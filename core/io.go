@@ -22,5 +22,13 @@ func (this *Response) Write(b []byte) (int, error) {
 
 type CoreIoBus interface {
 	RequestHandler(ReponseWriter, *Request) error
+	RawLuaHandler(string) string
 	GetMapper() map[string]string
+}
+
+type DataBase interface {
+	AddRow([]string, map[string]interface{}) error
+	DeleteRow(int) error
+	FindRow(int) (string, error)
+	ModifyRow([]string, map[string]interface{}) error
 }

@@ -1,9 +1,11 @@
 package restful
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/drone/routes"
@@ -13,20 +15,39 @@ import (
 func Run(port int, vms core.CoreIoBus) {
 	mux := routes.New()
 
-	mux.Get("/:activity/:args", HandlerHub(vms))
-	mux.Post("/:activity/:args", HandlerHub(vms))
+	mux.Get("/:activity/:id", HandlerHub(vms))
+	mux.Post("/:activity/:id", HandlerHub(vms))
 
-	http.ListenAndServe(":8080", mux)
+	http.ListenAndServe(":"+strconv.Itoa(port), mux)
 }
 
 func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := r.URL.Query()
 		activity := param.Get(":activity")
-		if strings.Contains(r.Method, vms.GetMapper()[activity]) == false {
-			fmt.Sprintln(w, "Wrong way to access. Use \""+r.Method+"\" Please")
+		log.Println(vms.GetMapper()[activity], r.Method)
+		if strings.Contains(vms.GetMapper()[activity], r.Method) == false {
+			fmt.Fprintln(w, "Wrong way to access. Use \""+vms.GetMapper()[activity]+"\" Please")
+			return
 		}
-		args := param.Get(":args")
+		id := param.Get(":id")
+
+		args := `{":id":"` + id + `"}`
+
+		if r.Method == "POST" {
+			if err := r.ParseForm(); err != nil {
+				log.Println(err)
+			}
+
+			tmp := make(map[string]string)
+			for k, v := range r.Form {
+				tmp[k] = v[0]
+			}
+
+			a, _ := json.Marshal(tmp)
+			args = string(a)
+		}
+
 		requestVM := core.Request{
 			Name: activity,
 			Args: args,
