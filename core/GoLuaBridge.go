@@ -11,6 +11,7 @@ import (
 
 type Activity struct {
 	L       *lua.LState
+	Father  string
 	Name    string
 	Types   string
 	Helper  string

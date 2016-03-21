@@ -6,6 +6,7 @@ type ReponseWriter interface {
 
 type Request struct {
 	Name string
+	Id   string
 	Type string
 	Args string
 }
@@ -31,4 +32,5 @@ type DataBase interface {
 	DeleteRow(int) error
 	FindRow(int) (string, error)
 	ModifyRow([]string, map[string]interface{}) error
+	GetFather(string) (string, error)
 }

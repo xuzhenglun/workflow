@@ -52,6 +52,7 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 		requestVM := core.Request{
 			Name: activity,
 			Args: args,
+			Id:   id,
 		}
 
 		responseVM := core.Response{}

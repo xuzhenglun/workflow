@@ -74,6 +74,7 @@ func (this Mysql) AddRow(notnull []string, args map[string]interface{}) error {
 	log.Println(Prep, SQL)
 
 	this.mux.Lock()
+	defer this.mux.Unlock()
 	tx, err := this.Db.Begin()
 	if err != nil {
 		log.Println(err)
@@ -114,7 +115,6 @@ func (this Mysql) AddRow(notnull []string, args map[string]interface{}) error {
 
 		return err
 	}
-	this.mux.Unlock()
 	return nil
 }
 
@@ -159,6 +159,7 @@ func (this Mysql) ModifyRow(notnull []string, args map[string]interface{}) error
 	Prep2 := Prep + strings.Join(notnull, "=? ,") + "=? WHERE Id=(SELECT Eid FROM process WHERE Id=" + strconv.Itoa(id) + ")"
 
 	this.mux.Lock()
+	defer this.mux.Unlock()
 	tx, err := this.Db.Begin()
 	if err != nil {
 		log.Println(err)
@@ -209,7 +210,6 @@ func (this Mysql) ModifyRow(notnull []string, args map[string]interface{}) error
 		log.Println(err)
 		return err
 	}
-	this.mux.Unlock()
 	return nil
 }
 
@@ -338,4 +338,24 @@ func (this Mysql) CreateTable(str string) error {
 		log.Println("Rollback Success")
 	}
 	return nil
+}
+
+func (this Mysql) GetFather(id string) (string, error) {
+	this.mux.Lock()
+
+	SQL := "SELECT JustDone FROM events,process WHERE events.Id=process.Eid AND process.Id="
+	rows, err := this.Db.Query(SQL + id)
+
+	this.mux.Unlock()
+	if err != nil {
+		return "", err
+	}
+	var father string
+	err = rows.Scan(&father)
+	if err != nil {
+		log.Println(err)
+		return "", err
+	} else {
+		return father, nil
+	}
 }
