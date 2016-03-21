@@ -37,6 +37,16 @@ func NewMysql(URI string) Mysql {
 		panic(err)
 	} else {
 		log.Println("Connected to " + URI)
+		err = db.CreateTable(`CREATE TABLE process (
+		Id int(4) primary key auto_increment,
+		Eid int(4) not null,
+		Pass boolean not null,
+		IsDone boolean,
+		JustDone char(10)
+	)`)
+		if err != nil {
+			log.Println(err)
+		}
 		return db
 	}
 }
@@ -76,9 +86,21 @@ func (this Mysql) AddRow(notnull []string, args map[string]interface{}) error {
 		return err
 	}
 
-	if _, err := stmt.Exec(SQL...); err != nil {
+	r, err := stmt.Exec(SQL...)
+	if err != nil {
 		log.Println(err)
 		return err
+	}
+
+	p, err := tx.Prepare("INSERT process SET EID=? ,IsDone=false ,Pass=false")
+	if err != nil {
+		log.Println(err)
+	}
+
+	id, _ := r.LastInsertId()
+	ra := strconv.FormatInt(id, 10)
+	if _, err := p.Exec(ra); err != nil {
+		log.Println(err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -128,7 +150,13 @@ func (this Mysql) ModifyRow(notnull []string, args map[string]interface{}) error
 		return DBError{When: time.Now(), What: "Inv ID"}
 	}
 
-	Prep = Prep + strings.Join(notnull, "=? ,") + "=? WHERE Id=" + strconv.Itoa(id)
+	ispass := false
+	if _, ok := args["pass"]; ok {
+		ispass = true
+	}
+
+	Prep1 := "UPDATE process SET Pass=? WHERE Id=" + strconv.Itoa(id)
+	Prep2 := Prep + strings.Join(notnull, "=? ,") + "=? WHERE Id=(SELECT Eid FROM process WHERE Id=" + strconv.Itoa(id) + ")"
 
 	this.mux.Lock()
 	tx, err := this.Db.Begin()
@@ -136,13 +164,34 @@ func (this Mysql) ModifyRow(notnull []string, args map[string]interface{}) error
 		log.Println(err)
 		return err
 	}
-	stmt, err := tx.Prepare(Prep)
+	stmt1, err := tx.Prepare(Prep1)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
 
-	if _, err := stmt.Exec(SQL...); err != nil {
+	stmt2, err := tx.Prepare(Prep2)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	var r sql.Result
+	if r, err = stmt1.Exec(ispass); err != nil {
+		log.Println(err)
+		if err := tx.Rollback(); err != nil {
+			log.Println(err)
+			log.Println("Rollback Failed")
+			return err
+		}
+		log.Println("ModifyRow Failed,Rollback Success")
+
+		return err
+	}
+	if id, _ := r.RowsAffected(); id == 0 {
+		return DBError{When: time.Now(), What: "Thare is not have this row"}
+	}
+	if r, err = stmt2.Exec(SQL...); err != nil {
 		log.Println(err)
 		if err := tx.Rollback(); err != nil {
 			log.Println(err)
@@ -152,6 +201,10 @@ func (this Mysql) ModifyRow(notnull []string, args map[string]interface{}) error
 		log.Println("ModifyRow Failed,Rollback Success")
 		return err
 	}
+	if id, _ := r.RowsAffected(); id == 0 {
+		return DBError{When: time.Now(), What: "Thare is not have this row"}
+	}
+
 	if err := tx.Commit(); err != nil {
 		log.Println(err)
 		return err
@@ -163,7 +216,7 @@ func (this Mysql) ModifyRow(notnull []string, args map[string]interface{}) error
 func (this Mysql) FindRow(id int) (string, error) {
 	this.mux.Lock()
 
-	SQL := "SELECT * FROM events,process WHERE events.Id=process.Id AND process.Id="
+	SQL := "SELECT * FROM events,process WHERE events.Id=process.Eid AND process.Id="
 	rows, err := this.Db.Query(SQL + strconv.Itoa(id))
 
 	this.mux.Unlock()
@@ -220,18 +273,26 @@ func (this Mysql) DeleteRow(id int) error {
 		log.Println(err)
 		return err
 	}
-	stmt1, err := tx.Prepare("DELETE FROM events WHERE Id=?")
+	stmt1, err := tx.Prepare("DELETE FROM events WHERE Id=(SELECT Eid FROM process WHERE Id=?)")
 	stmt2, err := tx.Prepare("DELETE FROM process WHERE Id=?")
 	if err != nil {
 		log.Println(err)
 		return err
 	} else {
-		if _, err := stmt1.Exec(id); err != nil {
+		var r sql.Result
+		if r, err = stmt1.Exec(id); err != nil {
 			log.Println(err)
 		}
-		if _, err := stmt2.Exec(id); err != nil {
+		if id, _ := r.RowsAffected(); id == 0 {
+			return DBError{When: time.Now(), What: "Not Exist"}
+		}
+		if r, err = stmt2.Exec(id); err != nil {
 			log.Println(err)
 		}
+		if id, _ := r.RowsAffected(); id == 0 {
+			return DBError{When: time.Now(), What: "Not Exist"}
+		}
+
 		err := tx.Commit()
 		if err != nil {
 			log.Println(err)

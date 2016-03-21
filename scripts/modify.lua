@@ -4,7 +4,6 @@ modify = {
     helper = "name address",
     handler = function(n)
         log("this is modifier")
-        ModRow(n,str)
-        return "Done"
+        return ModRow(n,str)
     end
 }

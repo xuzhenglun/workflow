@@ -4,8 +4,7 @@ start = {
     helper = "name address",
     handler = function(n)
         log("this is starter")
-        AddRow(n)
-        return "start"
+        return AddRow(n)
     end
 }
 

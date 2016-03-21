@@ -4,8 +4,7 @@ remove = {
     helper = "this is remove",
     handler = function(n)
         log(n)
-        DelRow(n)
-        return "Done"
+        return DelRow(n)
     end
 }
 

@@ -81,9 +81,11 @@ func (this VMs) DelRowFunc() func(l *lua.LState) int {
 				log.Println("ERROR: Wrong Input\n\t" + string(id))
 				return 0
 			}
-			if err = this.Db.DeleteRow(id); err != nil {
+			if err = this.Db.DeleteRow(id); err == nil {
+				log.Println(err)
 				l.Push(lua.LString("SUCC"))
 			} else {
+				log.Println(err)
 				l.Push(lua.LString("FAIL"))
 			}
 		} else {
