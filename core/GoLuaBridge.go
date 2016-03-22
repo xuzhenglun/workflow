@@ -45,6 +45,7 @@ func (activity *Activity) Handle(param string) (string, error) {
 		panic("Nil Activity")
 	}
 
+	log.Println("Handle Args: " + param)
 	l := (*activity).L
 	err := l.CallByParam(lua.P{
 		Fn:      (*activity).Handler,

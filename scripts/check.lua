@@ -1,10 +1,10 @@
 check = {
     name = "check",
     typ = "GET",
-    helper = "",
-    handler = function(n)
+    needArgs = "",
+    handler = function(req)
         log("this is checker")
-        a=FindRow(n)
+        a=FindRow(check,req)
         return a
     end
 }

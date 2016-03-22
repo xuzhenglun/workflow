@@ -1,10 +1,9 @@
 remove = {
     name = "remove",
     typ = "GET",
-    helper = "this is remove",
-    handler = function(n)
-        log(n)
-        return DelRow(n)
+    needArgs = "this is remove",
+    handler = function(req)
+        return DelRow(remove,req)
     end
 }
 

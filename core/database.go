@@ -1,125 +1,184 @@
 package core
 
 import (
-	"encoding/json"
 	"log"
-	"strconv"
+	"regexp"
 
+	"github.com/bitly/go-simplejson"
 	"github.com/yuin/gopher-lua"
 )
 
 func (this VMs) InitDatabase(l *lua.LState, a *Activity) {
-	l.SetGlobal("AddRow", l.NewFunction(this.AddRowFunc(*a)))
-	l.SetGlobal("DelRow", l.NewFunction(this.DelRowFunc()))
-	l.SetGlobal("ModRow", l.NewFunction(this.ModRowFunc(*a)))
-	l.SetGlobal("FindRow", l.NewFunction(this.FindRowFunc()))
+	l.SetGlobal("AddRow", l.NewFunction(this.AddRowFunc))
+	l.SetGlobal("DelRow", l.NewFunction(this.DelRowFunc))
+	l.SetGlobal("ModRow", l.NewFunction(this.ModRowFunc))
+	l.SetGlobal("FindRow", l.NewFunction(this.FindRowFunc))
 }
 
-func (this VMs) AddRowFunc(a Activity) func(l *lua.LState) int {
-	notnull := this.Re.FindAllString(a.Helper, -1)
-	return func(l *lua.LState) int {
-		if str, ok := l.Get(-1).(lua.LString); ok {
-			l.Pop(1)
-			log.Println("--->" + string(str))
-			args := make(map[string]interface{})
-			err := json.Unmarshal([]byte(str), &args)
-			if err != nil {
-				log.Println("Error: Json Decode fail\n" + string(str))
-			}
-			if err := this.Db.AddRow(notnull, args); err != nil {
-				log.Println(err)
-				l.Push(lua.LString("FAIL"))
-				return 1
-			} else {
-				l.Push(lua.LString("SUCC"))
-				return 1
-			}
-		} else {
-			l.Push(lua.LString("ERR"))
-			return 1
-		}
+func NewResult(code int, r interface{}) lua.LString {
+	j := simplejson.New()
+	j.Set("Code", code)
+	if v, ok := r.(error); ok {
+		j.Set("Msg", v.Error())
+	}
+	if v, ok := r.(string); ok {
+		j.Set("Msg", v)
+	}
+
+	ret, err := j.MarshalJSON()
+	if err == nil {
+		return lua.LString(ret)
+	} else {
+		log.Println(err)
+		return lua.LString(`{"Code":500,"Msg":"UnExpect Error"}`)
 	}
 }
 
-func (this VMs) ModRowFunc(a Activity) func(l *lua.LState) int {
-	notnull := this.Re.FindAllString(a.Helper, -1)
-	return func(l *lua.LState) int {
-		args := make(map[string]interface{})
-		str := l.ToString(1)
-		err := json.Unmarshal([]byte(str), &args)
-		if err != nil {
-			log.Println("Error: Json Decode fail\n" + string(str))
-			l.Push(lua.LString("ERR"))
-			return 1
-		}
-		if err := this.Db.ModifyRow(notnull, args); err != nil {
-			log.Println(err)
-			l.Push(lua.LString("FAIL"))
-			return 1
-		} else {
-			l.Push(lua.LString("SUCC"))
-			return 1
-		}
-	}
+var re, _ = regexp.Compile(`\w+`)
+
+func Splite(str lua.LString) []string {
+	return re.FindAllString(string(str), -1)
 }
 
-func (this VMs) DelRowFunc() func(l *lua.LState) int {
-	return func(l *lua.LState) int {
-		var id int
-		if str, ok := l.Get(-1).(lua.LString); ok {
-			l.Pop(1)
-			args := make(map[string]interface{})
-			err := json.Unmarshal([]byte(str), &args)
-			id, _ = strconv.Atoi(args[":id"].(string))
-			if err != nil {
-				log.Println("Error: Json Decode fail\n" + string(str))
-				l.Push(lua.LString("ERR"))
-				return 1
-			}
-
-			if err != nil {
-				log.Println("ERROR: Wrong Input\n\t" + string(id))
-				return 0
-			}
-			if err = this.Db.DeleteRow(id); err == nil {
-				log.Println(err)
-				l.Push(lua.LString("SUCC"))
-			} else {
-				log.Println(err)
-				l.Push(lua.LString("FAIL"))
-			}
-		} else {
-			l.Push(lua.LString("ERR"))
-		}
+func (this VMs) AddRowFunc(l *lua.LState) int {
+	env := l.ToTable(1)
+	req, err := simplejson.NewJson([]byte(l.ToString(2)))
+	if err != nil {
+		l.Push(NewResult(500, err))
 		return 1
 	}
-}
 
-func (this VMs) FindRowFunc() func(l *lua.LState) int {
-	return func(l *lua.LState) int {
-		if str, ok := l.Get(-1).(lua.LString); ok {
-			args := make(map[string]interface{})
-			err := json.Unmarshal([]byte(str), &args)
-			id, _ := args[":id"].(string)
+	var needArgs []string
+	if v, ok := env.RawGetString("needArgs").(lua.LString); ok {
+		needArgs = Splite(v)
+	}
 
-			Id, err := strconv.Atoi(id)
-			if err != nil {
-				log.Println(err)
-				log.Println(string(id))
-				l.Push(lua.LString("ERR"))
-				return 1
-			}
-			ret, err := this.Db.FindRow(Id)
-			if err != nil {
-				log.Println(err)
-				l.Push(lua.LString("ERR"))
-				return 1
-			}
-			l.Push(lua.LString(ret))
+	events := make(map[string]string)
+	process := make(map[string]string)
+	process["JustDone"] = env.RawGetString("name").String()
+
+	for _, k := range needArgs {
+		v, err := req.Get(k).String()
+		if err != nil {
+			log.Println(err)
+			l.Push(NewResult(401, err))
 			return 1
 		} else {
-			l.Push(lua.LString("ERR"))
-			return 1
+			if k != "Pass" || k != "Done" {
+				events[k] = v
+			} else {
+				process[k] = v
+			}
 		}
 	}
+
+	//Todo: Maybe I can add User Group here
+	log.Println(events, process)
+	if err := this.Db.AddRow(events, process); err != nil {
+		log.Println(err)
+		l.Push(NewResult(500, err))
+	} else {
+		l.Push(NewResult(200, "Sucess"))
+	}
+
+	return 1
+}
+
+func (this VMs) ModRowFunc(l *lua.LState) int {
+	env := l.ToTable(1)
+	req, err := simplejson.NewJson([]byte(l.ToString(2)))
+	if err != nil {
+		l.Push(NewResult(500, err))
+		return 1
+	}
+
+	var needArgs []string
+	if v, ok := env.RawGetString("needArgs").(lua.LString); ok {
+		needArgs = Splite(v)
+	}
+
+	events := make(map[string]string)
+	process := make(map[string]string)
+	process["JustDone"] = env.RawGetString("name").String()
+
+	for _, k := range needArgs {
+		v, err := req.Get(k).String()
+		if err != nil {
+			log.Println(err)
+			l.Push(NewResult(401, err))
+			return 1
+		} else {
+			if k != "Pass" || k != "Done" {
+				events[k] = v
+			} else {
+				process[k] = v
+			}
+		}
+	}
+
+	id, err := req.Get(":id").String()
+	if err == nil {
+		process["id"] = id
+	} else {
+		l.Push(NewResult(401, err))
+		return 1
+	}
+
+	//Todo: Maybe I can add User Group here
+	if err := this.Db.ModifyRow(events, process); err != nil {
+		log.Println(err)
+		l.Push(NewResult(500, err))
+	} else {
+		l.Push(NewResult(200, "Sucess"))
+	}
+
+	return 1
+}
+
+func (this VMs) DelRowFunc(l *lua.LState) int {
+	//env := l.ToTable(1)
+	req, err := simplejson.NewJson([]byte(l.ToString(2)))
+	if err != nil {
+		l.Push(NewResult(500, err))
+		return 1
+	}
+
+	id, err := req.Get(":id").String()
+	if err != nil {
+		log.Println(err)
+		l.Push(NewResult(401, err))
+	} else {
+		err = this.Db.DeleteRow(id)
+		if err != nil {
+			l.Push(NewResult(401, err))
+		} else {
+			l.Push(NewResult(200, "Sucess"))
+		}
+	}
+
+	return 1
+}
+
+func (this VMs) FindRowFunc(l *lua.LState) int {
+	//env := l.ToTable(1)
+	req, err := simplejson.NewJson([]byte(l.ToString(2)))
+	if err != nil {
+		l.Push(NewResult(500, err))
+	}
+
+	var res string
+	id, err := req.Get(":id").String()
+	if err != nil {
+		log.Println(err)
+		l.Push(NewResult(401, err))
+	} else {
+		res, err = this.Db.FindRow(id)
+		if err != nil {
+			l.Push(NewResult(401, err))
+		} else {
+			l.Push(NewResult(200, res))
+		}
+	}
+
+	return 1
 }

@@ -28,9 +28,9 @@ type CoreIoBus interface {
 }
 
 type DataBase interface {
-	AddRow([]string, map[string]interface{}) error
-	DeleteRow(int) error
-	FindRow(int) (string, error)
-	ModifyRow([]string, map[string]interface{}) error
+	AddRow(...map[string]string) error
+	DeleteRow(...string) error
+	FindRow(...string) (string, error)
+	ModifyRow(...map[string]string) error
 	GetFather(string) (string, error)
 }

@@ -1,9 +1,9 @@
 modify = {
     name = "modify",
     typ = "POST",
-    helper = "name address",
-    handler = function(n)
+    needArgs = "name address",
+    handler = function(req)
         log("this is modifier")
-        return ModRow(n,str)
+        return ModRow(modify,req)
     end
 }
