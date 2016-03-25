@@ -58,6 +58,7 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 		responseVM := core.Response{}
 		if err := vms.RequestHandler(&responseVM, &requestVM); err != nil {
 			log.Println("Request Handler Error")
+			fmt.Fprint(w, err)
 			w.WriteHeader(500)
 			return
 		} else {

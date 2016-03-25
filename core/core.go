@@ -75,6 +75,12 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 			log.Println(err)
 			return err
 		}
+
+		if f == "" {
+			log.Println("Cant't find this object (Row)")
+			return HandleErr{When: time.Now(), What: "Can't find father activity"}
+		}
+
 		log.Println(activity.Father, ":", f)
 		if f != activity.Father {
 			log.Println("Wrong Method To Handle This Events")
