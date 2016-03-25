@@ -34,6 +34,7 @@ func initCmd() *map[string]func(param ...string) string {
 	cmdTable["exit"] = exit
 	cmdTable["echo"] = echo
 	cmdTable["lua"] = runlua
+	cmdTable["reload"] = reload
 	return &cmdTable
 }
 
@@ -58,6 +59,10 @@ func runlua(param ...string) string {
 		coreIoBus.RawLuaHandler(v)
 	}
 	return "Done"
+}
+
+func reload(param ...string) string {
+	return coreIoBus.ReloadConfig()
 }
 
 func ScanLine() string {

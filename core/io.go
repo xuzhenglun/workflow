@@ -25,6 +25,7 @@ type CoreIoBus interface {
 	RequestHandler(ReponseWriter, *Request) error
 	RawLuaHandler(string) string
 	GetMapper() map[string]string
+	ReloadConfig() string
 }
 
 type DataBase interface {

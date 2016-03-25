@@ -143,3 +143,23 @@ func (this *VMs) RawLuaHandler(str string) string {
 	return "Done"
 
 }
+
+func (this *VMs) ReloadConfig() string {
+	path, _ := os.Open(SCRIPT_DIR)
+	info, _ := path.Readdir(-1)
+	re, _ := regexp.Compile(`^\w+[^/.]`)
+	this.Activities = make(map[string]string)
+	for _, v := range info {
+		f, err := ioutil.ReadFile(SCRIPT_DIR + v.Name())
+		if err != nil {
+			log.Panic(err)
+		}
+		this.Scripts = this.Scripts + string(f)
+		name := re.Find([]byte(v.Name()))
+		this.Activities[string(name)] = string(f)
+		log.Println("Script \"" + string(name) + "\" loaded")
+	}
+	this.InitMap()
+	this.Re, _ = regexp.Compile(`\w+`)
+	return "Done"
+}
