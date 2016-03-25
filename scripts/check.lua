@@ -1,4 +1,5 @@
 check = {
+    father = "start",
     name = "check",
     typ = "GET",
     needArgs = "",

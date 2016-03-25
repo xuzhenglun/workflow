@@ -120,8 +120,8 @@ func (this Mysql) ModifyRow(args ...map[string]string) error {
 
 	SQL1 = SQL1[:len(SQL1)-1] + "WHERE Id = (SELECT Eid FROM process WHERE Id = ?)"
 	SQL2 = SQL2[:len(SQL2)-1] + "WHERE Id = ?"
-	arg1 = append(arg1, args[1]["Id"])
-	arg2 = append(arg2, args[1]["Id"])
+	arg1 = append(arg1, args[1][":Id"])
+	arg2 = append(arg2, args[1][":Id"])
 
 	this.mux.Lock()
 	defer this.mux.Unlock()
@@ -137,6 +137,7 @@ func (this Mysql) ModifyRow(args ...map[string]string) error {
 		log.Println(err)
 		return err
 	}
+	log.Println(SQL1, arg1)
 	_, err = stms.Exec(arg1...)
 	if err != nil {
 		log.Println(err)
@@ -282,17 +283,20 @@ func (this Mysql) CreateTable(str string) error {
 }
 
 func (this Mysql) GetFather(id string) (string, error) {
-	this.mux.Lock()
-
 	SQL := "SELECT JustDone FROM events,process WHERE events.Id=process.Eid AND process.Id="
-	rows, err := this.Db.Query(SQL + id)
 
-	this.mux.Unlock()
+	this.mux.Lock()
+	defer this.mux.Unlock()
+	rows, err := this.Db.Query(SQL + id)
+	defer rows.Close()
 	if err != nil {
 		return "", err
 	}
+
 	var father string
-	err = rows.Scan(&father)
+	for rows.Next() {
+		err = rows.Scan(&father)
+	}
 	if err != nil {
 		log.Println(err)
 		return "", err

@@ -52,19 +52,6 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 	l := lua.NewState()
 	defer l.Close()
 
-	/* if r.Name != "start" {*/
-
-	//f, err := this.Db.GetFather(r.Id)
-	//if err != nil {
-	//log.Println(err)
-	//return err
-	//}
-	//if f != r.Name {
-	//log.Println("Wrong Method To Handle This Events")
-	//return nil
-	//}
-	/*}*/
-
 	if this.Api != nil {
 		for key, value := range this.Api {
 			l.SetGlobal(key, l.NewFunction(value))
@@ -80,6 +67,20 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 	}
 
 	activity := FindActivityByName(l, r.Name)
+
+	log.Println(activity.Father)
+	if r.Name != "start" {
+		f, err := this.Db.GetFather(r.Id)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		log.Println(activity.Father, ":", f)
+		if f != activity.Father {
+			log.Println("Wrong Method To Handle This Events")
+			return nil
+		}
+	}
 
 	if activity == nil {
 		return HandleErr{When: time.Now(), What: "Can't find activity"}

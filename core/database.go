@@ -124,6 +124,7 @@ func (this VMs) ModRowFunc(l *lua.LState) int {
 		return 1
 	}
 
+	log.Println(process, events)
 	//Todo: Maybe I can add User Group here
 	if err := this.Db.ModifyRow(events, process); err != nil {
 		log.Println(err)
