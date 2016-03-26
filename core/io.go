@@ -26,7 +26,7 @@ type CoreIoBus interface {
 	RawLuaHandler(string) string
 	GetMapper() map[string]string
 	ReloadConfig() string
-	GetActivities(string) string
+	GetActivities(string) (string, error)
 }
 
 type DataBase interface {

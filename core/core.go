@@ -67,6 +67,10 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 	}
 
 	activity := FindActivityByName(l, r.Name)
+	if activity == nil {
+		log.Println("404 Err")
+		return HandleErr{When: time.Now(), What: "404 Err"}
+	}
 
 	log.Println(activity.Father)
 	if r.Name != "start" {
@@ -164,7 +168,7 @@ func (this *VMs) ReloadConfig() string {
 	return "Done"
 }
 
-func (this *VMs) GetActivities(action string) string {
+func (this *VMs) GetActivities(action string) (string, error) {
 
 	l := lua.NewState()
 	defer l.Close()
@@ -177,11 +181,15 @@ func (this *VMs) GetActivities(action string) string {
 	}
 
 	activity := FindActivityByName(l, action)
+	if activity == nil {
+		log.Println("GetActivities can't find " + action)
+		return "", HandleErr{When: time.Now(), What: "404 Err"}
+	}
 	list, err := this.Db.GetList(activity.Father, activity.Pass)
 	if err != nil {
 		log.Println(err)
-		return ""
+		return "", HandleErr{When: time.Now(), What: "Empty List"}
 	} else {
-		return list
+		return list, nil
 	}
 }

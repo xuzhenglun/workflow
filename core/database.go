@@ -64,16 +64,16 @@ func (this VMs) AddRowFunc(l *lua.LState) int {
 			l.Push(NewResult(401, err))
 			return 1
 		} else {
-			if k != "Pass" || k != "Done" {
-				events[k] = v
-			} else {
+			if k == "Pass" || k == "Done" {
 				process[k] = v
+			} else {
+				events[k] = v
 			}
 		}
 	}
 
 	//Todo: Maybe I can add User Group here
-	log.Println(events, process)
+	log.Println("HandleFunc -> DBApi events,process:", events, process)
 	if err := this.Db.AddRow(events, process); err != nil {
 		log.Println(err)
 		l.Push(NewResult(500, err))
@@ -108,10 +108,10 @@ func (this VMs) ModRowFunc(l *lua.LState) int {
 			l.Push(NewResult(401, err))
 			return 1
 		} else {
-			if k != "Pass" || k != "Done" {
-				events[k] = v
-			} else {
+			if k == "pass" || k == "done" {
 				process[k] = v
+			} else {
+				events[k] = v
 			}
 		}
 	}
@@ -124,7 +124,7 @@ func (this VMs) ModRowFunc(l *lua.LState) int {
 		return 1
 	}
 
-	log.Println(process, events)
+	log.Println("HandleFunc -> DBApi events,process:", events, process)
 	//Todo: Maybe I can add User Group here
 	if err := this.Db.ModifyRow(events, process); err != nil {
 		log.Println(err)

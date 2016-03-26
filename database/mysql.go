@@ -105,18 +105,33 @@ func (this Mysql) AddRow(args ...map[string]string) error {
 }
 
 func (this Mysql) ModifyRow(args ...map[string]string) error {
+	log.Println(args[0], args[1])
 	SQL1 := `UPDATE events SET `
 	var arg1 []interface{}
 	for k, v := range args[0] {
 		SQL1 = SQL1 + k + " = ?" + " ,"
-		arg1 = append(arg1, v)
+		switch v {
+		case "true":
+			arg1 = append(arg1, true)
+		case "false":
+			arg1 = append(arg1, false)
+		default:
+			arg1 = append(arg1, v)
+		}
 	}
 	SQL2 := `UPDATE process SET `
 	var arg2 []interface{}
 	for k, v := range args[1] {
 		if k != "id" {
 			SQL2 = SQL2 + k + " = ?" + " ,"
-			arg2 = append(arg2, v)
+			switch v {
+			case "true":
+				arg2 = append(arg2, true)
+			case "false":
+				arg2 = append(arg2, false)
+			default:
+				arg2 = append(arg2, v)
+			}
 		}
 	}
 
@@ -133,29 +148,32 @@ func (this Mysql) ModifyRow(args ...map[string]string) error {
 		log.Println(err)
 		return err
 	}
+	if len(arg1) > 1 {
+		stms, err := tx.Prepare(SQL1)
+		if err != nil {
+			log.Println(SQL1, arg1)
+			log.Println(err)
+			return err
+		}
+		_, err = stms.Exec(arg1...)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+	}
 
-	stms, err := tx.Prepare(SQL1)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	log.Println(SQL1, arg1)
-	_, err = stms.Exec(arg1...)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	stms, err = tx.Prepare(SQL2)
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	log.Println(SQL2, arg2)
-	_, err = stms.Exec(arg2...)
-	if err != nil {
-		log.Println(err)
-		return err
+	if len(arg2) > 1 {
+		stms, err := tx.Prepare(SQL2)
+		if err != nil {
+			log.Println(SQL2, arg2)
+			log.Println(err)
+			return err
+		}
+		_, err = stms.Exec(arg2...)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 
 	return Commit(tx)

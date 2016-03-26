@@ -26,8 +26,7 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := r.URL.Query()
 		activity := param.Get(":activity")
-		log.Println(activity)
-		log.Println(vms.GetMapper()[activity], ":", r.Method)
+		log.Println(activity, vms.GetMapper()[activity], ":", r.Method)
 		if strings.Contains(vms.GetMapper()[activity], r.Method) == false {
 			fmt.Fprintln(w, "Wrong way to access. Use \""+vms.GetMapper()[activity]+"\" Please")
 			return
@@ -79,7 +78,11 @@ func ListActivites(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := r.URL.Query()
 		action := param.Get(":action")
-		list := vms.GetActivities(action)
-		fmt.Fprint(w, list)
+		list, err := vms.GetActivities(action)
+		if err == nil {
+			fmt.Fprint(w, list)
+		} else {
+			w.WriteHeader(404)
+		}
 	}
 }

@@ -1,8 +1,8 @@
-modify = {
-    father = "start",
-    name = "modify",
+no = {
+    father = "modify",
+    name = "no",
     typ = "POST",
-    needArgs = "pass",
+    needArgs = "name address",
     handler = function(req)
         return ModRow(modify,req)
     end
