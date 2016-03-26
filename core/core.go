@@ -70,7 +70,7 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 
 	log.Println(activity.Father)
 	if r.Name != "start" {
-		f, err := this.Db.GetFather(r.Id)
+		f, p, err := this.Db.GetJustDone(r.Id)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -82,7 +82,7 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 		}
 
 		log.Println(activity.Father, ":", f)
-		if f != activity.Father {
+		if f != activity.Father || p != activity.Pass {
 			log.Println("Wrong Method To Handle This Events")
 			return nil
 		}
@@ -162,4 +162,26 @@ func (this *VMs) ReloadConfig() string {
 	this.InitMap()
 	this.Re, _ = regexp.Compile(`\w+`)
 	return "Done"
+}
+
+func (this *VMs) GetActivities(action string) string {
+
+	l := lua.NewState()
+	defer l.Close()
+
+	if v, ok := this.Activities[action]; ok {
+		l.DoString(v)
+	} else {
+		log.Println(`Warning: Failed to Find "` + action + `.lua", I'will search it form globle, It's may cause performance issue.`)
+		l.DoString(this.Scripts)
+	}
+
+	activity := FindActivityByName(l, action)
+	list, err := this.Db.GetList(activity.Father, activity.Pass)
+	if err != nil {
+		log.Println(err)
+		return ""
+	} else {
+		return list
+	}
 }

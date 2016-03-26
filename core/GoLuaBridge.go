@@ -12,6 +12,7 @@ import (
 type Activity struct {
 	L       *lua.LState
 	Father  string
+	Pass    string
 	Name    string
 	Types   string
 	Helper  string
@@ -32,6 +33,11 @@ func FindActivityByName(l *lua.LState, name string) *Activity {
 			log.Println(`Waring: Faild to find the activity "` + name + `"`)
 			return nil
 		} else {
+			if activity.Pass == "" || activity.Pass == "false" {
+				activity.Pass = "0"
+			} else if activity.Pass == "true" {
+				activity.Pass = "1"
+			}
 			return &activity
 		}
 	} else {

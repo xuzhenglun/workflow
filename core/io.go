@@ -26,6 +26,7 @@ type CoreIoBus interface {
 	RawLuaHandler(string) string
 	GetMapper() map[string]string
 	ReloadConfig() string
+	GetActivities(string) string
 }
 
 type DataBase interface {
@@ -33,5 +34,6 @@ type DataBase interface {
 	DeleteRow(...string) error
 	FindRow(...string) (string, error)
 	ModifyRow(...map[string]string) error
-	GetFather(string) (string, error)
+	GetJustDone(string) (string, string, error)
+	GetList(string, string) (string, error)
 }

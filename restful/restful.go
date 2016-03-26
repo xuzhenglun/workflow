@@ -17,6 +17,7 @@ func Run(port int, vms core.CoreIoBus) {
 
 	mux.Get("/:activity/:id", HandlerHub(vms))
 	mux.Post("/:activity/:id", HandlerHub(vms))
+	mux.Get("/:action", ListActivites(vms))
 
 	http.ListenAndServe(":"+strconv.Itoa(port), mux)
 }
@@ -71,5 +72,14 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 				return
 			}
 		}
+	}
+}
+
+func ListActivites(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		param := r.URL.Query()
+		action := param.Get(":action")
+		list := vms.GetActivities(action)
+		fmt.Fprint(w, list)
 	}
 }

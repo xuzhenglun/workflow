@@ -114,14 +114,16 @@ func (this Mysql) ModifyRow(args ...map[string]string) error {
 	SQL2 := `UPDATE process SET `
 	var arg2 []interface{}
 	for k, v := range args[1] {
-		SQL2 = SQL2 + k + " = ?" + " ,"
-		arg2 = append(arg2, v)
+		if k != "id" {
+			SQL2 = SQL2 + k + " = ?" + " ,"
+			arg2 = append(arg2, v)
+		}
 	}
 
 	SQL1 = SQL1[:len(SQL1)-1] + "WHERE Id = (SELECT Eid FROM process WHERE Id = ?)"
 	SQL2 = SQL2[:len(SQL2)-1] + "WHERE Id = ?"
-	arg1 = append(arg1, args[1][":Id"])
-	arg2 = append(arg2, args[1][":Id"])
+	arg1 = append(arg1, args[1]["id"])
+	arg2 = append(arg2, args[1]["id"])
 
 	this.mux.Lock()
 	defer this.mux.Unlock()
@@ -149,6 +151,7 @@ func (this Mysql) ModifyRow(args ...map[string]string) error {
 		log.Println(err)
 		return err
 	}
+	log.Println(SQL2, arg2)
 	_, err = stms.Exec(arg2...)
 	if err != nil {
 		log.Println(err)
@@ -282,26 +285,26 @@ func (this Mysql) CreateTable(str string) error {
 	return nil
 }
 
-func (this Mysql) GetFather(id string) (string, error) {
-	SQL := "SELECT JustDone FROM events,process WHERE events.Id=process.Eid AND process.Id="
+func (this Mysql) GetJustDone(id string) (string, string, error) {
+	SQL := "SELECT JustDone,Pass FROM events,process WHERE events.Id=process.Eid AND process.Id=" + id
 
 	this.mux.Lock()
 	defer this.mux.Unlock()
-	rows, err := this.Db.Query(SQL + id)
+	rows, err := this.Db.Query(SQL)
 	defer rows.Close()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	var father string
+	var father, pass string
 	for rows.Next() {
-		err = rows.Scan(&father)
+		err = rows.Scan(&father, &pass)
 	}
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return "", "", err
 	} else {
-		return father, nil
+		return father, pass, nil
 	}
 }
 
@@ -315,4 +318,32 @@ func Commit(tx *sql.Tx) error {
 		return err
 	}
 	return nil
+}
+
+func (this Mysql) GetList(action string, pass string) (string, error) {
+	SQL := "SELECT process.Id FROM process,events WHERE process.Eid=events.Id AND process.Pass=" + pass + " AND JustDone = \"" + action + "\""
+	this.mux.Lock()
+
+	idrow, err := this.Db.Query(SQL)
+	if err != nil {
+		this.mux.Unlock()
+		return "", err
+	}
+
+	var ids []string
+	for idrow.Next() {
+		var buff string
+		idrow.Scan(&buff)
+		ids = append(ids, buff)
+	}
+
+	this.mux.Unlock()
+
+	jsonid, err := json.Marshal(ids)
+	if err == nil {
+		return string(jsonid), nil
+	} else {
+		log.Println(err)
+		return "", err
+	}
 }
