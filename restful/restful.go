@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bitly/go-simplejson"
 	"github.com/drone/routes"
 	"github.com/xuzhenglun/workflow/core"
 )
@@ -15,6 +16,7 @@ import (
 func Run(port int, vms core.CoreIoBus) {
 	mux := routes.New()
 
+	mux.Get("/:activity/help", listArgs(vms))
 	mux.Get("/:activity/:id", HandlerHub(vms))
 	mux.Post("/:activity/:id", HandlerHub(vms))
 	mux.Get("/:action", ListActivites(vms))
@@ -26,9 +28,9 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := r.URL.Query()
 		activity := param.Get(":activity")
-		log.Println(activity, vms.GetMapper()[activity], ":", r.Method)
+		log.Println(activity, ":", vms.GetMapper()[activity], ":", r.Method)
 		if strings.Contains(vms.GetMapper()[activity], r.Method) == false {
-			fmt.Fprintln(w, "Wrong way to access. Use \""+vms.GetMapper()[activity]+"\" Please")
+			w.Write([]byte("Wrong way to access. Use \"" + vms.GetMapper()[activity] + "\" Please"))
 			return
 		}
 		id := param.Get(":id")
@@ -83,6 +85,25 @@ func ListActivites(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) 
 			fmt.Fprint(w, list)
 		} else {
 			w.WriteHeader(404)
+		}
+	}
+}
+func listArgs(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		param := r.URL.Query()
+		activity := param.Get(":activity")
+
+		ret := simplejson.New()
+		if l, err := vms.ListNeedArgs(activity); err == nil {
+			ret.Set("args", l)
+		} else {
+			log.Println(err)
+			return
+		}
+		if c, err := ret.Encode(); err == nil {
+			w.Write(c)
+		} else {
+			log.Println(err)
 		}
 	}
 }

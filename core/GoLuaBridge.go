@@ -10,13 +10,13 @@ import (
 )
 
 type Activity struct {
-	L       *lua.LState
-	Father  string
-	Pass    string
-	Name    string
-	Types   string
-	Helper  string
-	Handler lua.LValue
+	L        *lua.LState
+	Father   string
+	Pass     string
+	Name     string
+	Types    string
+	NeedArgs string
+	Handler  lua.LValue
 }
 
 type HandleErr struct {

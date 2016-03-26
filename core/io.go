@@ -27,6 +27,7 @@ type CoreIoBus interface {
 	GetMapper() map[string]string
 	ReloadConfig() string
 	GetActivities(string) (string, error)
+	ListNeedArgs(string) ([]string, error)
 }
 
 type DataBase interface {

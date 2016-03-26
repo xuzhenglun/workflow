@@ -193,3 +193,22 @@ func (this *VMs) GetActivities(action string) (string, error) {
 		return list, nil
 	}
 }
+
+func (this *VMs) ListNeedArgs(action string) ([]string, error) {
+	l := lua.NewState()
+	defer l.Close()
+
+	if v, ok := this.Activities[action]; ok {
+		l.DoString(v)
+	} else {
+		log.Println(`Warning: Failed to Find "` + action + `.lua", I'will search it form globle, It's may cause performance issue.`)
+		l.DoString(this.Scripts)
+	}
+
+	activity := FindActivityByName(l, action)
+	if activity == nil {
+		return nil, HandleErr{When: time.Now(), What: "404 Err"}
+	}
+	var re, _ = regexp.Compile(`\w+`)
+	return re.FindAllString(activity.NeedArgs, -1), nil
+}
