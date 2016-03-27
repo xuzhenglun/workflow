@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"log"
 	"regexp"
 
@@ -22,7 +23,9 @@ func NewResult(code int, r interface{}) lua.LString {
 		j.Set("Msg", v.Error())
 	}
 	if v, ok := r.(string); ok {
-		j.Set("Msg", v)
+		var temp interface{}
+		json.Unmarshal([]byte(v), &temp)
+		j.Set("Msg", temp)
 	}
 
 	ret, err := j.MarshalJSON()
