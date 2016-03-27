@@ -86,6 +86,7 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 		}
 
 		log.Println(activity.Father, ":", f)
+		log.Println(activity.Pass, ":", p)
 		if f != activity.Father || p != activity.Pass {
 			log.Println("Wrong Method To Handle This Events")
 			return nil

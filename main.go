@@ -11,7 +11,8 @@ import (
 func main() {
 	core := core.InitCore()
 	core.RegeditApi(api.List)
-	db := database.NewMysql("root:xuzl93042136@/workflow?charset=utf8")
+
+	db := database.NewMongoDB("")
 	core.SetDataBase(db)
 
 	go cli.Run(core)
