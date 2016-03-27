@@ -64,27 +64,25 @@ func (this MongoDB) ModifyRow(args ...map[string]string) error {
 	return this.Db.UpdateId(id, saved)
 }
 
-func (this MongoDB) FindRow(id ...string) (string, error) {
+func (this MongoDB) FindRow(id string, needArgs ...string) (string, error) {
 	var ret []string
-	for _, i := range id {
-		qurry := this.Db.FindId(bson.ObjectIdHex(i))
-		saved := bson.M{}
+	qurry := this.Db.FindId(bson.ObjectIdHex(id))
+	saved := bson.M{}
 
-		if err := qurry.One(&saved); err != nil {
-			log.Println(err)
-			return "", err
-		}
-		j := simplejson.New()
-		for k, v := range saved {
-			j.Set(k, v)
-		}
+	if err := qurry.One(&saved); err != nil {
+		log.Println(err)
+		return "", err
+	}
+	j := simplejson.New()
+	for _, v := range needArgs {
+		j.Set(v, saved[v])
+	}
 
-		if r, err := j.Encode(); err != nil {
-			log.Println(err)
-			return "", err
-		} else {
-			ret = append(ret, string(r))
-		}
+	if r, err := j.Encode(); err != nil {
+		log.Println(err)
+		return "", err
+	} else {
+		ret = append(ret, string(r))
 	}
 
 	if l := len(ret); l < 1 {

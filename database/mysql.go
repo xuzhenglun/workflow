@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -179,16 +180,12 @@ func (this Mysql) ModifyRow(args ...map[string]string) error {
 	return Commit(tx)
 }
 
-func (this Mysql) FindRow(id ...string) (string, error) {
-	SQL := `SELECT * FROM process,events WHERE process.Eid = events.Id AND process.Id = ?`
-	var ID []interface{}
-	for _, v := range id {
-		ID = append(ID, v)
-	}
+func (this Mysql) FindRow(id string, needArgs ...string) (string, error) {
+	SQL := `SELECT ` + strings.Join(needArgs, ",") + ` FROM process,events WHERE process.Eid = events.Id AND process.Id = ?`
 	this.mux.Lock()
 	defer this.mux.Unlock()
 
-	rows, err := this.Db.Query(SQL, ID...)
+	rows, err := this.Db.Query(SQL, id)
 	if err != nil {
 		log.Println(err)
 		return "", err

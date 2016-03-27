@@ -164,10 +164,15 @@ func (this VMs) DelRowFunc(l *lua.LState) int {
 }
 
 func (this VMs) FindRowFunc(l *lua.LState) int {
-	//env := l.ToTable(1)
+	env := l.ToTable(1)
 	req, err := simplejson.NewJson([]byte(l.ToString(2)))
 	if err != nil {
 		l.Push(NewResult(500, err))
+	}
+
+	var needArgs []string
+	if v, ok := env.RawGetString("needArgs").(lua.LString); ok {
+		needArgs = Splite(v)
 	}
 
 	var res string
@@ -176,7 +181,7 @@ func (this VMs) FindRowFunc(l *lua.LState) int {
 		log.Println(err)
 		l.Push(NewResult(401, err))
 	} else {
-		res, err = this.Db.FindRow(id)
+		res, err = this.Db.FindRow(id, needArgs...)
 		if err != nil {
 			l.Push(NewResult(401, err))
 		} else {

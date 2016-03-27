@@ -33,7 +33,7 @@ type CoreIoBus interface {
 type DataBase interface {
 	AddRow(...map[string]string) error
 	DeleteRow(...string) error
-	FindRow(...string) (string, error)
+	FindRow(string, ...string) (string, error)
 	ModifyRow(...map[string]string) error
 	GetJustDone(string) (string, string, error)
 	GetList(string, string) (string, error)

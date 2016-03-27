@@ -2,7 +2,7 @@ check = {
     father = "start",
     name = "check",
     typ = "GET",
-    needArgs = "",
+    needArgs = "address",
     handler = function(req)
         log("this is checker")
         a=FindRow(check,req)
