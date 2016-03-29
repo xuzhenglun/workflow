@@ -16,6 +16,7 @@ import (
 
 type MongoDB struct {
 	Db       *mgo.Collection
+	BL       *mgo.Collection
 	mux      sync.Mutex
 	Activity *core.Activity
 }
@@ -27,6 +28,7 @@ func NewMongoDB(URI string) MongoDB {
 		log.Panic(err)
 	}
 	db.Db = session.DB("workflow").C("process")
+	db.BL = session.DB("workflow").C("blacklist")
 	return db
 }
 
@@ -148,4 +150,21 @@ func (this MongoDB) GetList(action string, pass string) (string, error) {
 			return string(ret), nil
 		}
 	}
+}
+
+func (this MongoDB) IsInBlackList(name, sig string) bool {
+	n, err := this.BL.Find(bson.M{name: sig}).Count()
+	log.Println("--->", n, err)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	if n < 1 {
+		return false
+	}
+	return true
+}
+
+func (this MongoDB) Revocate(name, sig string) error {
+	return this.BL.Insert(bson.M{name: sig})
 }

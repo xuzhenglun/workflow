@@ -3,12 +3,15 @@ package signature
 import (
 	"testing"
 	"time"
+
+	"github.com/xuzhenglun/workflow/database"
 )
 
 func Test_NewLicse(T *testing.T) {
 	group := []string{"shit", "holy", "start"}
 
-	sign := NewSigner("../keys.json")
+	db := database.NewMongoDB("")
+	sign := NewSigner("../keys.json", db)
 
 	user := sign.NewUser("Reficul", group, time.Now().Add(24*30*time.Hour))
 

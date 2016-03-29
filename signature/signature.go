@@ -8,14 +8,22 @@ import (
 	"github.com/xuzhenglun/workflow/algo"
 )
 
+type Database interface {
+	IsInBlackList(string, string) bool
+	Revocate(string, string) error
+}
+
 type Signature struct {
 	Key    interface{}
 	Method string
 	Crypto algo.Algorithm
+	DB     Database
 }
 
-func NewSigner(keys string) *Signature {
+func NewSigner(keys string, db Database) *Signature {
 	var s Signature
+
+	s.DB = db
 
 	f, err := ioutil.ReadFile(keys)
 	if err != nil {

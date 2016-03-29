@@ -99,6 +99,14 @@ func (this Signature) Verify(requestHead []byte, targetGroup string) bool {
 		return false
 	}
 
+	if this.DB.IsInBlackList(user.Name, user.Signture) {
+		log.Println("This License have been revocated")
+		return false
+	}
+	if user.SignTime.After(time.Now()) || user.ExpireTime.Before(time.Now()) {
+		return false
+	}
+
 	return this.IsBelong(user, targetGroup)
 }
 

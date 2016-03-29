@@ -5,10 +5,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"testing"
+
+	"github.com/xuzhenglun/workflow/database"
 )
 
 func Test_SignAndVerify(t *testing.T) {
-	signer := NewSigner("../keys.json")
+	db := database.NewMongoDB("")
+	signer := NewSigner("../keys.json", db)
 
 	reader := bufio.NewReader(rand.Reader)
 	var buff [102400]byte
@@ -23,7 +26,8 @@ func Test_SignAndVerify(t *testing.T) {
 }
 
 func Test_SignAndVerifyWithBase64(t *testing.T) {
-	signer := NewSigner("../keys.json")
+	db := database.NewMongoDB("")
+	signer := NewSigner("../keys.json", db)
 
 	reader := bufio.NewReader(rand.Reader)
 	var buff [102400]byte
