@@ -16,6 +16,7 @@ type Activity struct {
 	Name     string
 	Types    string
 	NeedArgs string
+	Groups   string
 	Handler  lua.LValue
 }
 

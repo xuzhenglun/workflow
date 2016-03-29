@@ -9,6 +9,7 @@ type Request struct {
 	Id   string
 	Type string
 	Args string
+	Auth []byte
 }
 
 type Response struct {
@@ -26,8 +27,8 @@ type CoreIoBus interface {
 	RawLuaHandler(string) string
 	GetMapper() map[string]string
 	ReloadConfig() string
-	GetActivities(string) (string, error)
-	ListNeedArgs(string) ([]string, error)
+	GetActivities([]byte, string) (string, error)
+	ListNeedArgs([]byte, string) ([]string, error)
 }
 
 type DataBase interface {

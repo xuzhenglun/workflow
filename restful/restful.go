@@ -26,6 +26,8 @@ func Run(port int, vms core.CoreIoBus) {
 
 func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("auth")
+
 		param := r.URL.Query()
 		activity := param.Get(":activity")
 		log.Println(activity, ":", vms.GetMapper()[activity], ":", r.Method)
@@ -34,7 +36,6 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 		id := param.Get(":id")
-
 		args := `{":id":"` + id + `"}`
 
 		if r.Method == "POST" {
@@ -55,6 +56,7 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 			Name: activity,
 			Args: args,
 			Id:   id,
+			Auth: []byte(auth),
 		}
 
 		responseVM := core.Response{}
@@ -78,9 +80,11 @@ func HandlerHub(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 
 func ListActivites(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("auth")
+
 		param := r.URL.Query()
 		action := param.Get(":action")
-		list, err := vms.GetActivities(action)
+		list, err := vms.GetActivities([]byte(auth), action)
 		if err == nil {
 			fmt.Fprint(w, list)
 		} else {
@@ -90,11 +94,13 @@ func ListActivites(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) 
 }
 func listArgs(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("auth")
+
 		param := r.URL.Query()
 		activity := param.Get(":activity")
 
 		ret := simplejson.New()
-		if l, err := vms.ListNeedArgs(activity); err == nil {
+		if l, err := vms.ListNeedArgs([]byte(auth), activity); err == nil {
 			ret.Set("args", l)
 		} else {
 			log.Println(err)

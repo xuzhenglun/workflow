@@ -6,6 +6,7 @@ import (
 	"github.com/xuzhenglun/workflow/core"
 	"github.com/xuzhenglun/workflow/database"
 	"github.com/xuzhenglun/workflow/restful"
+	"github.com/xuzhenglun/workflow/signature"
 )
 
 func main() {
@@ -14,6 +15,9 @@ func main() {
 
 	db := database.NewMongoDB("")
 	core.SetDataBase(db)
+
+	sign := signature.NewSigner("keys.json")
+	core.SetAuther(sign)
 
 	go cli.Run(core)
 	restful.Run(8080, core)

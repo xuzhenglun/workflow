@@ -20,6 +20,7 @@ type VMs struct {
 	Mappler    map[string]string
 	Api        map[string]func(*lua.LState) int
 	Db         DataBase
+	Auth       Purview
 	Re         *regexp.Regexp
 }
 
@@ -70,6 +71,11 @@ func (this *VMs) RequestHandler(w ReponseWriter, r *Request) error {
 	if activity == nil {
 		log.Println("404 Err")
 		return HandleErr{When: time.Now(), What: "404 Err"}
+	}
+
+	if !this.Auth.Verify(r.Auth, activity.Groups) {
+		log.Println("Have no right to access")
+		return HandleErr{When: time.Now(), What: "403 forbidden"}
 	}
 
 	log.Println(activity.Father)
@@ -169,8 +175,7 @@ func (this *VMs) ReloadConfig() string {
 	return "Done"
 }
 
-func (this *VMs) GetActivities(action string) (string, error) {
-
+func (this *VMs) GetActivities(auth []byte, action string) (string, error) {
 	l := lua.NewState()
 	defer l.Close()
 
@@ -186,6 +191,12 @@ func (this *VMs) GetActivities(action string) (string, error) {
 		log.Println("GetActivities can't find " + action)
 		return "", HandleErr{When: time.Now(), What: "404 Err"}
 	}
+
+	if !this.Auth.Verify(auth, activity.Groups) {
+		log.Println("Have no right to access")
+		return "", HandleErr{When: time.Now(), What: "403 forbidden"}
+	}
+
 	list, err := this.Db.GetList(activity.Father, activity.Pass)
 	if err != nil {
 		log.Println(err)
@@ -195,7 +206,7 @@ func (this *VMs) GetActivities(action string) (string, error) {
 	}
 }
 
-func (this *VMs) ListNeedArgs(action string) ([]string, error) {
+func (this *VMs) ListNeedArgs(auth []byte, action string) ([]string, error) {
 	l := lua.NewState()
 	defer l.Close()
 
@@ -210,6 +221,12 @@ func (this *VMs) ListNeedArgs(action string) ([]string, error) {
 	if activity == nil {
 		return nil, HandleErr{When: time.Now(), What: "404 Err"}
 	}
+
+	if !this.Auth.Verify(auth, activity.Groups) {
+		log.Println("Have no right to access")
+		return nil, HandleErr{When: time.Now(), What: "403 forbidden"}
+	}
+
 	var re, _ = regexp.Compile(`\w+`)
 	return re.FindAllString(activity.NeedArgs, -1), nil
 }
