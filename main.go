@@ -14,7 +14,7 @@ func main() {
 	core.RegeditApi(api.List)
 
 	db := database.NewMongoDB("")
-	//db:=database.NewSql("user:passwd@/workflow?charset=utf8")
+	//db := database.NewMysql("user:passwd@/workflow?charset=utf8")
 	core.SetDataBase(db)
 
 	sign := signature.NewSigner("keys.json", db)

@@ -47,6 +47,14 @@ func NewMysql(URI string) Mysql {
 		if err != nil {
 			log.Println(err)
 		}
+		err = db.CreateTable(`CREATE TABLE blacklist (
+		Id int(4) primary key auto_increment,
+		sig text not null
+	)`)
+		if err != nil {
+			log.Println(err)
+		}
+
 		return db
 	}
 }
@@ -361,4 +369,36 @@ func (this Mysql) GetList(action string, pass string) (string, error) {
 		log.Println(err)
 		return "", err
 	}
+}
+
+func (this Mysql) IsInBlackList(name, sig string) bool {
+	SQL := "SELECT * FROM blacklist WHERE sig=\"" + sig + "\""
+	this.mux.Lock()
+	defer this.mux.Unlock()
+
+	qurry, err := this.Db.Query(SQL)
+	if err != nil {
+		log.Println("SQL ERROR:", err)
+		return false
+	}
+	return qurry.Next()
+}
+
+func (this Mysql) Revocate(name, sig string) error {
+	SQL := "INSERT INTO blacklist SET sig=?"
+	this.mux.Lock()
+	defer this.mux.Unlock()
+
+	smst, err := this.Db.Prepare(SQL)
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	_, err = smst.Exec(sig)
+	if err != nil {
+		log.Println(err)
+	}
+	return err
 }
