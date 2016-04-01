@@ -131,3 +131,22 @@ func (this Signature) NewLicese(user User) string {
 
 	return base64.StdEncoding.EncodeToString([]byte(j))
 }
+
+func (this Signature) GetGroupsOfUser(auth string) *[]string {
+	var user User
+	license, err := base64.StdEncoding.DecodeString(auth)
+	if err != nil {
+		log.Println(err)
+		return nil
+	}
+
+	if err := json.Unmarshal(license, &user); err != nil {
+		log.Println(err)
+		return nil
+	}
+	group := make([]string, len(user.Group))
+	for i, v := range user.Group {
+		group[i] = *v
+	}
+	return &group
+}

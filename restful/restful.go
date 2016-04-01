@@ -16,6 +16,7 @@ import (
 func Run(port int, vms core.CoreIoBus) {
 	mux := routes.New()
 
+	mux.Get("/", GetPurviewActivities(vms))
 	mux.Get("/:activity/help", listArgs(vms))
 	mux.Get("/:activity/:id", HandlerHub(vms))
 	mux.Post("/:activity/:id", HandlerHub(vms))
@@ -110,6 +111,26 @@ func listArgs(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
 			w.Write(c)
 		} else {
 			log.Println(err)
+		}
+	}
+}
+
+func GetPurviewActivities(vms core.CoreIoBus) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("auth")
+
+		resp, err := vms.GetPurviewActivities(auth)
+		if err != nil {
+			log.Println(err)
+		}
+
+		ret, err := json.Marshal(resp)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(403)
+		} else {
+			w.Write(ret)
 		}
 	}
 }

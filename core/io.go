@@ -29,6 +29,7 @@ type CoreIoBus interface {
 	ReloadConfig() string
 	GetActivities([]byte, string) (string, error)
 	ListNeedArgs([]byte, string) ([]string, error)
+	GetPurviewActivities(string) ([]string, error)
 }
 
 type DataBase interface {

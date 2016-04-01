@@ -60,6 +60,7 @@ func (this VMs) AddRowFunc(l *lua.LState) int {
 	process := make(map[string]string)
 	process["JustDone"] = env.RawGetString("name").String()
 
+	log.Println(req)
 	for _, k := range needArgs {
 		v, err := req.Get(k).String()
 		if err != nil {

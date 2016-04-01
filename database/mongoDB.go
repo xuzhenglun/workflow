@@ -63,6 +63,10 @@ func (this MongoDB) ModifyRow(args ...map[string]string) error {
 	if saved["pass"] == "true" {
 		saved["pass"] = "1"
 	}
+	if saved["pass"] == "false" {
+		saved["pass"] = "0"
+	}
+
 	return this.Db.UpdateId(id, saved)
 }
 
